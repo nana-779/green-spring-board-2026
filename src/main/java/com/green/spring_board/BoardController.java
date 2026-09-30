@@ -22,7 +22,13 @@ public class BoardController {
         return boardRepository.findAll();
     }
 
-    // 삽입
+    // 상세 조회
+    @GetMapping("/{id}")
+    public Boards getBoardDetail(@PathVariable int id) {
+        return boardRepository.findById(id).get();
+    }
+
+    // 삽입(생성)
     @PostMapping
     public void createBoard(@RequestBody BoardCreateRequest boardCreateRequest){
         System.out.println(boardCreateRequest.getTitle());
@@ -36,8 +42,26 @@ public class BoardController {
     }
 
     // 수정
+    @PatchMapping("/{id}")
+    public void updateBoard(
+            @PathVariable int id,
+            @RequestBody BoardCreateRequest boardCreateRequest) {
+
+        Boards boards = boardRepository.findById(id).get();
+
+        if (boardCreateRequest.getTitle() != null) {
+            boards.setTitle(boardCreateRequest.getTitle());
+        }
+        if (boardCreateRequest.getContent() != null) {
+            boards.setContent(boardCreateRequest.getContent());
+        }
+        boardRepository.save(boards);
+    }
 
 
     // 삭제
-
+    @DeleteMapping("/{id}")
+    public void deleteBoard(@PathVariable int id) {
+        boardRepository.deleteById(id);
+    }
 }
