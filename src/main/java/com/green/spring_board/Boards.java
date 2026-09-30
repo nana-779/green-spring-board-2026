@@ -1,10 +1,22 @@
 package com.green.spring_board;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+// JPA 기능
 @Entity
 @Table(name = "boards")
+// lombok 기능
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+
 public class Boards {
+    // DB에서 어떤 콜럼이 어떤 그거인지 알려주는거
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -15,34 +27,6 @@ public class Boards {
     @Column(nullable = false)
     private String content;
 
-    // 생성자
-    public Boards () {}
-
-    public Boards(int id, String title, String content) {
-        this.id = id;
-        this.title = title;
-        this.content = content;
-    }
-
-    // getter, setter
-    public int getId() {
-        return id;
-    }
-    public void setId(int id) {
-        this.id = id;
-    }
-    public String getTitle() {
-        return title;
-    }
-    public void setTitle(String title) {
-        this.title = title;
-    }
-    public String getContent() {
-        return content;
-    }
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-
+    @Column(nullable = false)
+    private int hits;
 }

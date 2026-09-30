@@ -1,19 +1,23 @@
 package com.green.spring_board;
 
+import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/board")
+@AllArgsConstructor // 어노테이션 사용하고 생성자 삭제함 왜?
+
 public class BoardController {
     private BoardRepository boardRepository;
 
-    //클래스의 프라이빗에 접근하려면? 게터, 세터나 생성자를 통해야함
-    //Controller가 Repository에 의존하고 있기 때문에 Repository를 전달받기 위한 생성자를 만듬
-    public BoardController(BoardRepository boardRepository) {
-        this.boardRepository = boardRepository;
-    }
+//    //클래스의 프라이빗에 접근하려면? 게터, 세터나 생성자를 통해야함
+//    //Controller가 Repository에 의존하고 있기 때문에 Repository를 전달받기 위한 생성자를 만듬
+//    public BoardController(BoardRepository boardRepository) {
+//        this.boardRepository = boardRepository;
+//    }
+
 
     // 전체 조회
     @GetMapping
@@ -25,7 +29,12 @@ public class BoardController {
     // 상세 조회
     @GetMapping("/{id}")
     public Boards getBoardDetail(@PathVariable int id) {
-        return boardRepository.findById(id).get();
+        Boards boards = boardRepository.findById(id).get();
+        boards.setHits(boards.getHits() +1);
+
+        boardRepository.save(boards);
+
+        return boards;
     }
 
     // 삽입(생성)
@@ -57,7 +66,6 @@ public class BoardController {
         }
         boardRepository.save(boards);
     }
-
 
     // 삭제
     @DeleteMapping("/{id}")
