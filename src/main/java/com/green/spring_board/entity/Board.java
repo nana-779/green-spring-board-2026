@@ -15,7 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 
-public class Boards {
+public class Board {
     // DB에서 어떤 콜럼이 어떤 그거인지 알려주는거
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
