@@ -75,10 +75,11 @@ public class BoardController {
 
         try {
             boardService.updateBoard(id, boardCreateRequest);
-
             return ResponseEntity.ok().build();
         } catch (ResourceNotFountException e) {
             return ResponseEntity.notFound().build();
+        } catch (UserRequestException e) {
+            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

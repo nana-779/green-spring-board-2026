@@ -64,12 +64,15 @@ public class BoardService {
          // 위에거 다 거쳤으면 게시글을 꺼냄
          Board board = optionalBoard.get();
 
-         if (boardCreateRequest.getTitle() != null && !boardCreateRequest.getTitle().isBlank()) {
-             board.setTitle(boardCreateRequest.getTitle());
+         if (boardCreateRequest.getTitle() == null || boardCreateRequest.getTitle().isBlank()) {
+             throw new UserRequestException("잘못된 입력값입니다");
          }
-         if (boardCreateRequest.getContent() != null && !boardCreateRequest.getContent().isBlank()) {
-             board.setContent(boardCreateRequest.getContent());
+         board.setTitle(boardCreateRequest.getTitle());
+
+         if (boardCreateRequest.getContent() == null || boardCreateRequest.getContent().isBlank()) {
+             throw new UserRequestException("잘못된 입력값입니다");
          }
+         board.setContent(boardCreateRequest.getContent());
 
          boardRepository.save(board);
     }
