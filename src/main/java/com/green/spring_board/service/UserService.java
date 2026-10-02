@@ -10,7 +10,6 @@ import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.exceptions.UserRequestException;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

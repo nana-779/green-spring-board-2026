@@ -3,7 +3,6 @@ package com.green.spring_board.controller;
 import com.green.spring_board.DTO.LoginRequest;
 import com.green.spring_board.DTO.MyInfoResponse;
 import com.green.spring_board.DTO.SignupRequest;
-import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
@@ -17,7 +16,6 @@ import org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/user")
@@ -134,7 +132,6 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
-
     }
 
     // 회원 삭제
