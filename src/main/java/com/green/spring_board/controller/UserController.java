@@ -3,6 +3,7 @@ package com.green.spring_board.controller;
 import com.green.spring_board.DTO.LoginRequest;
 import com.green.spring_board.DTO.MyInfoResponse;
 import com.green.spring_board.DTO.SignupRequest;
+import com.green.spring_board.DTO.UserUpdateRequest;
 import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
@@ -11,6 +12,7 @@ import com.green.spring_board.repository.UserRepository;
 import com.green.spring_board.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +30,7 @@ public class UserController {
 
     // 회원가입
     @PostMapping("/signup")
-    public ResponseEntity<Void> singup(@RequestBody SignupRequest signupRequest) {
+    public ResponseEntity<Void> singup(@Valid @RequestBody SignupRequest signupRequest) {
         try {
             userService.signup(signupRequest);
             return ResponseEntity.ok().build();
@@ -48,8 +50,10 @@ public class UserController {
 
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@RequestBody LoginRequest loginRequest,
+    public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest loginRequest,
                                       HttpServletRequest httpServletRequest) {
+
+        // DTO Valid (
         try {
             int userId = userService.login(loginRequest);
             // 세션작업
@@ -103,7 +107,7 @@ public class UserController {
     // 회원 수정
     @PatchMapping("/update")
     public ResponseEntity<Void> updateUserInfo (HttpServletRequest request,
-                                                @RequestBody MyInfoResponse response) {
+                                                @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
         // 이메일, 닉네임 업데이트
 
         // 세션 확인
@@ -119,7 +123,7 @@ public class UserController {
             //(서비스로옮긴걸 호출해와야함)
             // UserService의 updateUserInfo 메서드에서
             // 세션의 userId랑 내가 requestBody로 받은 response를 가져와야한다
-            userService.updateUserInfo(userId, response);
+            userService.updateUserInfo(userId, userUpdateRequest);
 
             return ResponseEntity.ok().build();
 
@@ -147,7 +151,7 @@ public class UserController {
         int userId = (int) session.getAttribute("userId");
 
         // 1. DB 삭제
-        // 나중을 대비해서 삭제로직은 서비스로 옮김
+        // 나중을 대비해서 삭제로직은 서비스로 옮김F
         // 서비스의 deleteUser 메서드가 해줌
         userService.deleteUser(userId);
         // 2. 로그아웃(세션아웃)

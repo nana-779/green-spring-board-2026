@@ -2,6 +2,7 @@ package com.green.spring_board.service;
 
 import com.green.spring_board.DTO.BoardCreateRequest;
 import com.green.spring_board.DTO.BoardResponse;
+import com.green.spring_board.DTO.BoardUpdateRequest;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UserRequestException;
@@ -99,7 +100,7 @@ public class BoardService {
         return savedBoard.getId();
     }
 
-    public void updateBoard (int id, BoardCreateRequest boardCreateRequest) {
+    public void updateBoard (int id, BoardUpdateRequest boardUpdateRequest) {
         Optional<Board> optionalBoard = boardRepository.findById(id);
         if (optionalBoard.isEmpty()) {
             // 요청한 게시글 번호를 찾지 못한 경우
@@ -107,14 +108,14 @@ public class BoardService {
         }
         // 위에거 다 거쳤으면 게시글을 꺼냄
         Board board = optionalBoard.get();
-        if (boardCreateRequest.getTitle() == null || boardCreateRequest.getTitle().isBlank()) {
+        if (boardUpdateRequest.getTitle() == null || boardUpdateRequest.getTitle().isBlank()) {
             throw new UserRequestException("잘못된 입력값입니다");
         }
-        board.setTitle(boardCreateRequest.getTitle());
-        if (boardCreateRequest.getContent() == null || boardCreateRequest.getContent().isBlank()) {
+        board.setTitle(boardUpdateRequest.getTitle());
+        if (boardUpdateRequest.getContent() == null || boardUpdateRequest.getContent().isBlank()) {
             throw new UserRequestException("잘못된 입력값입니다");
         }
-        board.setContent(boardCreateRequest.getContent());
+        board.setContent(boardUpdateRequest.getContent());
         boardRepository.save(board);
     }
 

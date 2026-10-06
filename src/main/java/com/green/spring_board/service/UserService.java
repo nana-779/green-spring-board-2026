@@ -3,6 +3,7 @@ package com.green.spring_board.service;
 import com.green.spring_board.DTO.LoginRequest;
 import com.green.spring_board.DTO.MyInfoResponse;
 import com.green.spring_board.DTO.SignupRequest;
+import com.green.spring_board.DTO.UserUpdateRequest;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
@@ -82,7 +83,7 @@ public class UserService {
     }
 
     // 유저 정보 수정
-    public void updateUserInfo (int userId, MyInfoResponse myInfoResponse) {
+    public void updateUserInfo (int userId, UserUpdateRequest userUpdateRequest) {
         Optional<User> optionalUser = userRepository.findById(userId);
 
         if (optionalUser.isEmpty()) {
@@ -92,13 +93,13 @@ public class UserService {
         User user = optionalUser.get();
 
         // null이면 수정하지 않기
-        if (myInfoResponse.getEmail() == null || myInfoResponse.getEmail().isBlank()) {
+        if (userUpdateRequest.getEmail() == null || userUpdateRequest.getEmail().isBlank()) {
             throw new UserRequestException("잘못된 입력값");
-        } user.setEmail(myInfoResponse.getEmail());
+        } user.setEmail(userUpdateRequest.getEmail());
 
-        if (myInfoResponse.getNickname() == null || myInfoResponse.getNickname().isBlank()) {
+        if (userUpdateRequest.getNickname() == null || userUpdateRequest.getNickname().isBlank()) {
             throw new UserRequestException("잘못된 입력값");
-        } user.setNickname(myInfoResponse.getNickname());
+        } user.setNickname(userUpdateRequest.getNickname());
 
         userRepository.save(user);
     }
