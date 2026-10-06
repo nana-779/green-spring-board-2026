@@ -1,5 +1,6 @@
 package com.green.spring_board.controller;
 
+import com.green.spring_board.DTO.ApiResponse;
 import com.green.spring_board.DTO.BoardCreateRequest;
 import com.green.spring_board.DTO.BoardResponse;
 import com.green.spring_board.DTO.BoardUpdateRequest;
@@ -27,26 +28,25 @@ public class BoardController {
 
     // 전체 조회
     @GetMapping
-    public ResponseEntity<List<BoardResponse>> getBoards(){
+    public ResponseEntity<ApiResponse<List<BoardResponse>>> getBoards(){
         return ResponseEntity.ok( // = 원하는 응답을 직접 셋팅하는걸 도와줌
-                boardService.getAllBoard()
+                ApiResponse.ok(boardService.getAllBoard())
         );
     }
 
     // 상세 조회
     @GetMapping("/{id}")
-    public ResponseEntity<BoardResponse> getBoardDetail(@PathVariable int id) {
-
+    public ResponseEntity<ApiResponse<BoardResponse>> getBoardDetail(@PathVariable int id) {
 
             BoardResponse board = boardService.getBoard(id);
 
             // id가 있으면 게시글 반환
-            return ResponseEntity.ok(board);
+            return ResponseEntity.ok(ApiResponse.ok(board));
     }
 
     // 삽입(생성)
     @PostMapping
-    public ResponseEntity<Void> createBoard(@Valid @RequestBody BoardCreateRequest boardCreateRequest,
+    public ResponseEntity<ApiResponse<Void>> createBoard(@Valid @RequestBody BoardCreateRequest boardCreateRequest,
                                             HttpServletRequest httpServletRequest){
 
             // 세션 가져오기
@@ -59,12 +59,15 @@ public class BoardController {
             int userId = (int) session.getAttribute("userId");
             int newBoardId = boardService.createBoard(boardCreateRequest, userId);
             URI location = URI.create("/api/board/" + newBoardId);
-            return ResponseEntity.created(location).build();
+
+            return ResponseEntity
+                    .created(location)
+                    .body(ApiResponse.ok());
     }
 
     // 수정
     @PatchMapping("/{id}")
-    public ResponseEntity<Void> updateBoard(
+    public ResponseEntity<ApiResponse<Void>> updateBoard(
             @PathVariable int id,
             @Valid @RequestBody BoardUpdateRequest boardUpdateRequest,
             HttpServletRequest httpServletRequest) {
@@ -75,12 +78,12 @@ public class BoardController {
         }
 
         boardService.updateBoard(id, boardUpdateRequest);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     // 삭제
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBoard(@PathVariable int id,
+    public ResponseEntity<ApiResponse<Void>> deleteBoard(@PathVariable int id,
                                             HttpServletRequest httpServletRequest) {
 
         HttpSession session = httpServletRequest.getSession(false);
@@ -89,6 +92,6 @@ public class BoardController {
         }
 
         boardService.deleteBoard(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 }
