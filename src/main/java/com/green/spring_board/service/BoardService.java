@@ -5,14 +5,12 @@ import com.green.spring_board.DTO.BoardResponse;
 import com.green.spring_board.DTO.BoardUpdateRequest;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.ResourceNotFountException;
-import com.green.spring_board.exceptions.UserRequestException;
 import com.green.spring_board.entity.Board;
 import com.green.spring_board.repository.BoardRepository;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -77,12 +75,6 @@ public class BoardService {
     }
 
     public int createBoard(BoardCreateRequest boardCreateRequest, Integer userId) {
-        if (boardCreateRequest.getTitle() == null || boardCreateRequest.getTitle().isBlank()) {
-             throw new UserRequestException("잘못된 입력값입니다");
-        }
-        if (boardCreateRequest.getContent() == null || boardCreateRequest.getContent().isBlank()) {
-             throw new UserRequestException("잘못된 입력값입니다");
-        }
 
         //유저 객체 만들고 유효성 체크
         // TODO :: 이후 삭제/탈퇴 유저에 대한 검증도 필요
@@ -108,14 +100,15 @@ public class BoardService {
         }
         // 위에거 다 거쳤으면 게시글을 꺼냄
         Board board = optionalBoard.get();
-        if (boardUpdateRequest.getTitle() == null || boardUpdateRequest.getTitle().isBlank()) {
-            throw new UserRequestException("잘못된 입력값입니다");
+        if (boardUpdateRequest.getTitle() != null && !boardUpdateRequest.getTitle().isBlank()) {
+            board.setTitle(boardUpdateRequest.getTitle());
         }
-        board.setTitle(boardUpdateRequest.getTitle());
-        if (boardUpdateRequest.getContent() == null || boardUpdateRequest.getContent().isBlank()) {
-            throw new UserRequestException("잘못된 입력값입니다");
+
+        if (boardUpdateRequest.getContent() != null && !boardUpdateRequest.getContent().isBlank()) {
+            board.setContent(boardUpdateRequest.getContent());
         }
-        board.setContent(boardUpdateRequest.getContent());
+
+
         boardRepository.save(board);
     }
 

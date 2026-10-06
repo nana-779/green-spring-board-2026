@@ -8,7 +8,6 @@ import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
-import com.green.spring_board.exceptions.UserRequestException;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -25,10 +24,7 @@ public class UserService {
 
     // 회원가입
     public void signup (SignupRequest signupRequest) {
-        // 유저네임, 비밀번호가 공백인지 아닌지 확인
-        if (signupRequest.getEmail().isBlank() || signupRequest.getPassword().isBlank()) {
-            throw new UserRequestException("이메일과 비밀번호는 공백일 수 없습니다");
-        }
+
         // 이메일이 사용중인지 확인
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
             throw new ResourceConflictException("이메일이 이미 사용중입니다");
@@ -93,13 +89,13 @@ public class UserService {
         User user = optionalUser.get();
 
         // null이면 수정하지 않기
-        if (userUpdateRequest.getEmail() == null || userUpdateRequest.getEmail().isBlank()) {
-            throw new UserRequestException("잘못된 입력값");
-        } user.setEmail(userUpdateRequest.getEmail());
+        if (userUpdateRequest.getEmail() != null && !userUpdateRequest.getEmail().isBlank()) {
+            user.setEmail(userUpdateRequest.getEmail());
+        }
 
-        if (userUpdateRequest.getNickname() == null || userUpdateRequest.getNickname().isBlank()) {
-            throw new UserRequestException("잘못된 입력값");
-        } user.setNickname(userUpdateRequest.getNickname());
+        if (userUpdateRequest.getNickname() != null && !userUpdateRequest.getNickname().isBlank()) {
+            user.setNickname(userUpdateRequest.getNickname());
+        }
 
         userRepository.save(user);
     }

@@ -3,8 +3,7 @@ package com.green.spring_board.controller;
 import com.green.spring_board.DTO.BoardCreateRequest;
 import com.green.spring_board.DTO.BoardResponse;
 import com.green.spring_board.DTO.BoardUpdateRequest;
-import com.green.spring_board.exceptions.ResourceNotFountException;
-import com.green.spring_board.exceptions.UserRequestException;
+import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.service.BoardService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -15,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+
+// 전역 핸들러?
 
 @RestController
 @RequestMapping("/api/board")
@@ -36,21 +37,11 @@ public class BoardController {
     @GetMapping("/{id}")
     public ResponseEntity<BoardResponse> getBoardDetail(@PathVariable int id) {
 
-        try {
+
             BoardResponse board = boardService.getBoard(id);
-            // 서비스에서 board를 못찾았으면 not found 반환
-            if (board == null) {
-                return ResponseEntity.notFound().build();
-            }
+
             // id가 있으면 게시글 반환
             return ResponseEntity.ok(board);
-
-        } catch (ResourceNotFountException e) {
-            return ResponseEntity.notFound().build();
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
     }
 
     // 삽입(생성)
@@ -58,59 +49,46 @@ public class BoardController {
     public ResponseEntity<Void> createBoard(@Valid @RequestBody BoardCreateRequest boardCreateRequest,
                                             HttpServletRequest httpServletRequest){
 
-        try {
             // 세션 가져오기
             HttpSession session = httpServletRequest.getSession(false);
-
             if (session == null || session.getAttribute("userId") == null) {
-                return ResponseEntity.status(401).build();
+                throw new UnauthenticatedException("로그인이 필요합니다");
             }
+
             // 세션에서 유저 아이디 뽑아오기
             int userId = (int) session.getAttribute("userId");
-
             int newBoardId = boardService.createBoard(boardCreateRequest, userId);
             URI location = URI.create("/api/board/" + newBoardId);
-
             return ResponseEntity.created(location).build();
-
-        } catch (UserRequestException e) {
-            return ResponseEntity.badRequest().build();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
-        }
     }
 
     // 수정
     @PatchMapping("/{id}")
     public ResponseEntity<Void> updateBoard(
             @PathVariable int id,
-            @Valid @RequestBody BoardUpdateRequest boardUpdateRequest) {
+            @Valid @RequestBody BoardUpdateRequest boardUpdateRequest,
+            HttpServletRequest httpServletRequest) {
 
-        try {
-            boardService.updateBoard(id, boardUpdateRequest);
-            return ResponseEntity.ok().build();
-        } catch (ResourceNotFountException e) {
-            return ResponseEntity.notFound().build();
-        } catch (UserRequestException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+        HttpSession session = httpServletRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            throw new UnauthenticatedException("로그인이 필요합니다");
         }
+
+        boardService.updateBoard(id, boardUpdateRequest);
+        return ResponseEntity.ok().build();
     }
 
     // 삭제
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBoard(@PathVariable int id) {
+    public ResponseEntity<Void> deleteBoard(@PathVariable int id,
+                                            HttpServletRequest httpServletRequest) {
 
-        try {
-            boardService.deleteBoard(id);
-            return ResponseEntity.noContent().build();
-        } catch (ResourceNotFountException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+        HttpSession session = httpServletRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            throw new UnauthenticatedException("로그인이 필요합니다");
         }
+
+        boardService.deleteBoard(id);
+        return ResponseEntity.noContent().build();
     }
 }
