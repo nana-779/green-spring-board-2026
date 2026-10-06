@@ -1,10 +1,13 @@
 package com.green.spring_board.controller;
 
 import com.green.spring_board.DTO.BoardCreateRequest;
+import com.green.spring_board.DTO.BoardResponse;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UserRequestException;
 import com.green.spring_board.service.BoardService;
 import com.green.spring_board.entity.Board;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +25,7 @@ public class BoardController {
 
     // 전체 조회
     @GetMapping
-    public ResponseEntity<List<Board>> getBoards(){
+    public ResponseEntity<List<BoardResponse>> getBoards(){
         return ResponseEntity.ok( // = 원하는 응답을 직접 셋팅하는걸 도와줌
                 boardService.getAllBoard()
         );
@@ -30,10 +33,10 @@ public class BoardController {
 
     // 상세 조회
     @GetMapping("/{id}")
-    public ResponseEntity<Board> getBoardDetail(@PathVariable int id) {
+    public ResponseEntity<BoardResponse> getBoardDetail(@PathVariable int id) {
 
         try {
-            Board board = boardService.getBoard(id);
+            BoardResponse board = boardService.getBoard(id);
             // 서비스에서 board를 못찾았으면 not found 반환
             if (board == null) {
                 return ResponseEntity.notFound().build();
@@ -51,10 +54,19 @@ public class BoardController {
 
     // 삽입(생성)
     @PostMapping
-    public ResponseEntity<Void> createBoard(@RequestBody BoardCreateRequest boardCreateRequest){
+    public ResponseEntity<Void> createBoard(@RequestBody BoardCreateRequest boardCreateRequest, HttpServletRequest httpServletRequest){
 
         try {
-            int newBoardId = boardService.createBoard(boardCreateRequest);
+            // 세션 가져오기
+            HttpSession session = httpServletRequest.getSession(false);
+
+            if (session == null || session.getAttribute("userId") == null) {
+                return ResponseEntity.status(401).build();
+            }
+            // 세션에서 유저 아이디 뽑아오기
+            int userId = (int) session.getAttribute("userId");
+
+            int newBoardId = boardService.createBoard(boardCreateRequest, userId);
             URI location = URI.create("/api/board/" + newBoardId);
 
             return ResponseEntity.created(location).build();
