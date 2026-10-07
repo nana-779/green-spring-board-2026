@@ -76,8 +76,9 @@ public class BoardController {
         if (session == null || session.getAttribute("userId") == null) {
             throw new UnauthenticatedException("로그인이 필요합니다");
         }
+        int userId = (int) session.getAttribute("userId");
 
-        boardService.updateBoard(id, boardUpdateRequest);
+        boardService.updateBoard(id, boardUpdateRequest, userId);
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
@@ -90,8 +91,9 @@ public class BoardController {
         if (session == null || session.getAttribute("userId") == null) {
             throw new UnauthenticatedException("로그인이 필요합니다");
         }
+        int userId = (int) session.getAttribute("userId");
 
-        boardService.deleteBoard(id);
+        boardService.deleteBoard(id, userId);
         return ResponseEntity.ok(ApiResponse.ok());
     }
 }

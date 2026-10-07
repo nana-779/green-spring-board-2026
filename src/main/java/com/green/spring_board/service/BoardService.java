@@ -4,6 +4,7 @@ import com.green.spring_board.DTO.BoardCreateRequest;
 import com.green.spring_board.DTO.BoardResponse;
 import com.green.spring_board.DTO.BoardUpdateRequest;
 import com.green.spring_board.entity.User;
+import com.green.spring_board.exceptions.AuthorizationFailureException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.entity.Board;
 import com.green.spring_board.repository.BoardRepository;
@@ -92,7 +93,8 @@ public class BoardService {
         return savedBoard.getId();
     }
 
-    public void updateBoard (int id, BoardUpdateRequest boardUpdateRequest) {
+    public void updateBoard (int id, BoardUpdateRequest boardUpdateRequest, int userId) {
+        // 작성자와 요청자가 다르다면 DB에 다녀올필요 X
         Optional<Board> optionalBoard = boardRepository.findById(id);
         if (optionalBoard.isEmpty()) {
             // 요청한 게시글 번호를 찾지 못한 경우
@@ -100,6 +102,13 @@ public class BoardService {
         }
         // 위에거 다 거쳤으면 게시글을 꺼냄
         Board board = optionalBoard.get();
+
+        // 이 경우엔 보드에 접근해서 작성자를 알아야해서 DB접근 후에 코드 추가
+        // 요청자의 userId 확인
+        if (board.getUser().getId() != userId) {
+            throw new AuthorizationFailureException("해당 게시글의 작업 권한이 없습니다");
+        }
+
         if (boardUpdateRequest.getTitle() != null && !boardUpdateRequest.getTitle().isBlank()) {
             board.setTitle(boardUpdateRequest.getTitle());
         }
@@ -108,15 +117,23 @@ public class BoardService {
             board.setContent(boardUpdateRequest.getContent());
         }
 
-
         boardRepository.save(board);
     }
 
-    public void deleteBoard(int id) {
-        boolean isExist = boardRepository.existsById(id);
+    public void deleteBoard(int id, int userId) {
+        Optional<Board> optionalBoard = boardRepository.findById(id);
 
-        if (!isExist) {
+        if (optionalBoard.isEmpty()) {
             throw new ResourceNotFountException("게시글을 찾을 수 없습니다");
+        }
+
+        // 위에거 다 거쳤으면 게시글을 꺼냄
+        Board board = optionalBoard.get();
+
+        // 이 경우엔 보드에 접근해서 작성자를 알아야해서 DB접근 후에 코드 추가
+        // 요청자의 userId 확인
+        if (board.getUser().getId() != userId) {
+            throw new AuthorizationFailureException("해당 게시글의 작업 권한이 없습니다");
         }
         boardRepository.deleteById(id);
     }
