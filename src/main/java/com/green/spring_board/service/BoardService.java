@@ -3,7 +3,6 @@ package com.green.spring_board.service;
 import com.green.spring_board.DTO.BoardCreateRequest;
 import com.green.spring_board.DTO.BoardResponse;
 import com.green.spring_board.DTO.BoardUpdateRequest;
-import com.green.spring_board.DTO.MyBoardResponse;
 import com.green.spring_board.entity.Like;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.AuthorizationFailureException;
@@ -13,7 +12,6 @@ import com.green.spring_board.repository.BoardRepository;
 import com.green.spring_board.repository.LikeRepository;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.boot.webmvc.autoconfigure.WebMvcProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -38,6 +36,7 @@ public class BoardService {
                             board.getTitle(),
                             board.getContent(),
                             board.getHits(),
+                            board.getLikeCount(),
                             board.getUser().getId(),
                             board.getUser().getNickname(),
                             board.getCreatedDatetime(),
@@ -72,6 +71,7 @@ public class BoardService {
                 board.getTitle(),
                 board.getContent(),
                 board.getHits(),
+                board.getLikeCount(),
                 board.getUser().getId(),
                 board.getUser().getNickname(),
                 board.getCreatedDatetime(),
@@ -80,9 +80,9 @@ public class BoardService {
     }
 
     // 내 게시글 조회
-    public List<MyBoardResponse> getMyBoard (int userId) {
+    public List<BoardResponse> getMyBoard (int userId) {
         List<Board> boards = boardRepository.findByUserId(userId);
-        List<MyBoardResponse> myBoardResponse = new ArrayList<>();
+        List<BoardResponse> myBoardResponse = new ArrayList<>();
 
         // 게시글이 없으면 없다고 알리기
         if (boards.isEmpty()) {
@@ -91,11 +91,12 @@ public class BoardService {
 
         for (Board board : boards) {
             myBoardResponse.add(
-                    new MyBoardResponse(
+                    new BoardResponse(
                             board.getId(),
                             board.getTitle(),
                             board.getContent(),
                             board.getHits(),
+                            board.getLikeCount(),
                             board.getUser().getId(),
                             board.getUser().getNickname(),
                             board.getCreatedDatetime(),
@@ -190,10 +191,18 @@ public class BoardService {
             like.setUser(user);
             like.setBoard(board);
             likeRepository.save(like);
+
+            // 좋아요 수 카운트 +
+            board.setLikeCount(board.getLikeCount() + 1);
+            boardRepository.save(board);
         } else {
             // 있으면 -> 삭제
             Like like = optionalLike.get();
             likeRepository.deleteById(like.getId());
+
+            // 좋아요 수 카운트 -
+            board.setLikeCount(board.getLikeCount() - 1);
+            boardRepository.save(board);
         }
     }
 }

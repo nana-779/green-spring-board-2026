@@ -33,7 +33,7 @@ public class BoardController {
 
     // 내 게시글 조회
     @GetMapping("/my")
-    public ResponseEntity<ApiResponse<List<MyBoardResponse>>> getMyBoard(HttpServletRequest httpServletRequest) {
+    public ResponseEntity<ApiResponse<List<BoardResponse>>> getMyBoard(HttpServletRequest httpServletRequest) {
         // 1. 세션 확인
         // 세션 가져오기
         HttpSession session = httpServletRequest.getSession(false);
@@ -124,10 +124,8 @@ public class BoardController {
         boardService.pressLike(id, userId);
         return ResponseEntity.ok(ApiResponse.ok());
 
-        // 다시 눌렀을때 취소
-
-        // 좋아요 수
-
+        // 다시 눌렀을때 취소 O
+        // 좋아요 수 O
         // 상세 눌렀을때 어느 유저가 눌렀는지
 
         // 내가 이 게시글에 좋아요 눌렀는지
