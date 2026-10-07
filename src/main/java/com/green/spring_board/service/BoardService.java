@@ -3,6 +3,7 @@ package com.green.spring_board.service;
 import com.green.spring_board.DTO.BoardCreateRequest;
 import com.green.spring_board.DTO.BoardResponse;
 import com.green.spring_board.DTO.BoardUpdateRequest;
+import com.green.spring_board.DTO.LikeDetailResponse;
 import com.green.spring_board.entity.Like;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.AuthorizationFailureException;
@@ -25,7 +26,7 @@ public class BoardService {
     private UserRepository userRepository;
     private LikeRepository likeRepository;
 
-    public List<BoardResponse> getAllBoard () {
+    public List<BoardResponse> getAllBoard (int userId) {
         List<Board> boards = boardRepository.findAll();
         List<BoardResponse> boardResponse = new ArrayList<>();
 
@@ -37,6 +38,7 @@ public class BoardService {
                             board.getContent(),
                             board.getHits(),
                             board.getLikeCount(),
+                            (userId == -1) ? false : likeRepository.existsByUserIdAndBoardId(userId, board.getId()),
                             board.getUser().getId(),
                             board.getUser().getNickname(),
                             board.getCreatedDatetime(),
@@ -52,7 +54,7 @@ public class BoardService {
     // 3. 1번에서 만든 리스트에 추가
 
 
-    public BoardResponse getBoard (int id){
+    public BoardResponse getBoard (int id, int userId){
         Optional<Board> optionalBoard = boardRepository.findById(id); // 안에 값이 있or없 박스를 받음
         if (optionalBoard.isEmpty()) {
             // 요청한 게시글 번호를 찾지 못한 경우
@@ -60,7 +62,6 @@ public class BoardService {
         }
         // 게시글 꺼냄
         Board board = optionalBoard.get();
-
         // 조회수 +1
         board.setHits(board.getHits() +1);
         // 조회수 +1된 게시글 저장
@@ -72,6 +73,7 @@ public class BoardService {
                 board.getContent(),
                 board.getHits(),
                 board.getLikeCount(),
+                (userId == -1) ? false : likeRepository.existsByUserIdAndBoardId(userId, board.getId()),
                 board.getUser().getId(),
                 board.getUser().getNickname(),
                 board.getCreatedDatetime(),
@@ -97,6 +99,7 @@ public class BoardService {
                             board.getContent(),
                             board.getHits(),
                             board.getLikeCount(),
+                            (userId == -1) ? false : likeRepository.existsByUserIdAndBoardId(userId, board.getId()),
                             board.getUser().getId(),
                             board.getUser().getNickname(),
                             board.getCreatedDatetime(),
@@ -204,5 +207,20 @@ public class BoardService {
             board.setLikeCount(board.getLikeCount() - 1);
             boardRepository.save(board);
         }
+    }
+
+    public LikeDetailResponse getLikeDetail (int id) {
+        // 이 게시글에 좋아요 누른 유저 정보들을 likes 테이블에서 싹 가져오기
+        List<Like> likes = likeRepository.findByBoardId(id);
+        // 그 유저들의 닉네임을 뽑아서 LikeDetailResponse에 넣기
+        LikeDetailResponse likeDetailResponse = new LikeDetailResponse();
+        List<String> nicknames = new ArrayList<>();
+
+        for (Like like : likes) {
+            nicknames.add(like.getUser().getNickname());
+        }
+        likeDetailResponse.setLikedUserNames(nicknames);
+        // LikeDetailResponse 반환
+        return likeDetailResponse;
     }
 }

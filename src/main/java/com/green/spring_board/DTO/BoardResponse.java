@@ -17,6 +17,7 @@ public class BoardResponse {
     String content;
     int hits;
     int likeCount;
+    boolean isLikedByMe;
     Integer authorId;
     String authorNickname;
     LocalDateTime createdDatetime;
