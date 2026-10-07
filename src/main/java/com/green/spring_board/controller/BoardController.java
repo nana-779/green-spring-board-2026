@@ -1,9 +1,6 @@
 package com.green.spring_board.controller;
 
-import com.green.spring_board.DTO.ApiResponse;
-import com.green.spring_board.DTO.BoardCreateRequest;
-import com.green.spring_board.DTO.BoardResponse;
-import com.green.spring_board.DTO.BoardUpdateRequest;
+import com.green.spring_board.DTO.*;
 import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.service.BoardService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +28,23 @@ public class BoardController {
     public ResponseEntity<ApiResponse<List<BoardResponse>>> getBoards(){
         return ResponseEntity.ok( // = 원하는 응답을 직접 셋팅하는걸 도와줌
                 ApiResponse.ok(boardService.getAllBoard())
+        );
+    }
+
+    // 내 게시글 조회
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<List<MyBoardResponse>>> getMyBoard(HttpServletRequest httpServletRequest) {
+        // 1. 세션 확인
+        // 세션 가져오기
+        HttpSession session = httpServletRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            throw new UnauthenticatedException("로그인이 필요합니다");
+        }
+        // 2. 유저 id 확인
+        int userId = (int) session.getAttribute("userId");
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(boardService.getMyBoard(userId))
         );
     }
 

@@ -3,6 +3,7 @@ package com.green.spring_board.service;
 import com.green.spring_board.DTO.BoardCreateRequest;
 import com.green.spring_board.DTO.BoardResponse;
 import com.green.spring_board.DTO.BoardUpdateRequest;
+import com.green.spring_board.DTO.MyBoardResponse;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.AuthorizationFailureException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
@@ -42,7 +43,6 @@ public class BoardService {
         }
         return boardResponse;
     }
-
     // List<Board> -> List<BoardResponse> 로 변환
     // 1. 리스트 보드 리스폰스 형태의 빈 리스트 생성
     // 2. 보드 개수만큼 반복하여 new boardresponse 생성
@@ -74,6 +74,34 @@ public class BoardService {
                 board.getUpdatedDatetime()
         );
     }
+
+    // 내 게시글 조회
+    public List<MyBoardResponse> getMyBoard (int userId) {
+        List<Board> boards = boardRepository.findByUserId(userId);
+        List<MyBoardResponse> myBoardResponse = new ArrayList<>();
+
+        // 게시글이 없으면 없다고 알리기
+        if (boards.isEmpty()) {
+            throw new ResourceNotFountException("게시글을 찾지 못했습니다");
+        }
+
+        for (Board board : boards) {
+            myBoardResponse.add(
+                    new MyBoardResponse(
+                            board.getId(),
+                            board.getTitle(),
+                            board.getContent(),
+                            board.getHits(),
+                            board.getUser().getId(),
+                            board.getUser().getNickname(),
+                            board.getCreatedDatetime(),
+                            board.getUpdatedDatetime()
+                    )
+            );
+        }
+        return myBoardResponse;
+    }
+
 
     public int createBoard(BoardCreateRequest boardCreateRequest, Integer userId) {
 
