@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface BoardRepository extends JpaRepository<Board, Integer> {
     List<Board> findByUserId(int userId);
+
 }
 // board 테이블 전용 쿼리 생성기

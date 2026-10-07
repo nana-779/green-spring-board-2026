@@ -41,8 +41,6 @@ public class UserController {
         session.setAttribute("userId", userId);
 
         return ResponseEntity.ok(ApiResponse.ok());
-        // 스프링부트랑 톰캣이 관리함, 클라이언트의 요청이 세션정보를 갖고있으면 개발자에게 전달, 아니면
-
     }
 
     // "내" 정보 조회 (이메일과 닉네임만, 비밀번호는 이미 해싱해버려서 반환 불가)
