@@ -89,10 +89,6 @@ public class UserService {
 
         User user = optionalUser.get();
 
-        if (user.getId() != userId) {
-            throw new AuthorizationFailureException("해당 작업 권한이 없습니다");
-        }
-
         // null이면 수정하지 않기
         if (userUpdateRequest.getEmail() != null && !userUpdateRequest.getEmail().isBlank()) {
             user.setEmail(userUpdateRequest.getEmail());
@@ -112,10 +108,6 @@ public class UserService {
 
         if (optionalUser.isEmpty()) {
             throw new ResourceNotFountException("유저를 찾을 수 없습니다");
-        }
-
-        if (user.getId() != userId) {
-            throw new AuthorizationFailureException("해당 작업 권한이 없습니다");
         }
 
         userRepository.delete(user);

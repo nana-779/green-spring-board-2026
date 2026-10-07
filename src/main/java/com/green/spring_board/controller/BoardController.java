@@ -33,25 +33,8 @@ public class BoardController {
             userId = (int) session.getAttribute("userId");
         }
 
-
         return ResponseEntity.ok( // = 원하는 응답을 직접 셋팅하는걸 도와줌
                 ApiResponse.ok(boardService.getAllBoard(userId))
-        );
-    }
-
-    // 내 게시글 조회
-    @GetMapping("/my")
-    public ResponseEntity<ApiResponse<List<BoardResponse>>> getMyBoard(HttpServletRequest httpServletRequest) {
-        // 1. 세션 확인
-        // 세션 가져오기
-        HttpSession session = httpServletRequest.getSession(false);
-        int userId = -1;
-        if (session != null && session.getAttribute("userId") != null) {
-            userId = (int) session.getAttribute("userId");
-        }
-
-        return ResponseEntity.ok(
-                ApiResponse.ok(boardService.getMyBoard(userId))
         );
     }
 
@@ -68,6 +51,23 @@ public class BoardController {
         BoardResponse board = boardService.getBoard(id, userId);
         // id가 있으면 게시글 반환
         return ResponseEntity.ok(ApiResponse.ok(board));
+    }
+
+    // 내 게시글 조회
+    @GetMapping("/my-boards")
+    public ResponseEntity<ApiResponse<List<BoardResponse>>> getMyBoard(HttpServletRequest httpServletRequest) {
+        // 1. 세션 확인
+        // 세션 가져오기
+        HttpSession session = httpServletRequest.getSession(false);
+        if (session == null || session.getAttribute("userId") == null) {
+            throw new UnauthenticatedException("로그인이 필요합니다");
+        }
+        // 세션에서 유저 아이디 뽑아오기
+        int userId = (int) session.getAttribute("userId");
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(boardService.getMyBoard(userId))
+        );
     }
 
     // 삽입(생성)

@@ -63,7 +63,7 @@ public class BoardService {
         // 게시글 꺼냄
         Board board = optionalBoard.get();
         // 조회수 +1
-        board.setHits(board.getHits() +1);
+        board.setHits(board.getHits() + 1);
         // 조회수 +1된 게시글 저장
         boardRepository.save(board);
         // board 반환
