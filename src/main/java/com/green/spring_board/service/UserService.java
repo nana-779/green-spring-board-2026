@@ -9,6 +9,7 @@ import com.green.spring_board.exceptions.AuthorizationFailureException;
 import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
+import com.green.spring_board.global.UserState;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -39,6 +40,7 @@ public class UserService {
         user.setNickname(signupRequest.getNickname());
         user.setEmail(signupRequest.getEmail());
         user.setPassword(hashedPassword);
+        user.setState(UserState.ACTIVE);
         userRepository.save(user);
     }
 
@@ -50,6 +52,11 @@ public class UserService {
             throw new ResourceNotFountException("유저를 찾을 수 없습니다");
         }
         User user = optionalUser.get();
+
+        if (user.getState() == UserState.QUITTED) {
+            throw new ResourceNotFountException("탈퇴한 회원입니다");
+        }
+
         // 2. 비밀번호가 올바른지 확인
         // matches = 사용자가 입력한 비밀번호를 알아서 해싱해서 내가 DB에 갖고있는 해싱된 비밀번호와 대조함
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
@@ -67,6 +74,11 @@ public class UserService {
             throw new ResourceNotFountException("유저를 찾을 수 없습니다");
         }
         User user = optionalUser.get();
+
+        if (user.getState() == UserState.QUITTED) {
+            throw new ResourceNotFountException("탈퇴한 회원입니다");
+        }
+
         // 3. 유저 아이디로 DB 조회
         // 4. DB에서 유저의 닉네임과 이메일 받아오기
         String email = user.getEmail();
@@ -89,6 +101,10 @@ public class UserService {
 
         User user = optionalUser.get();
 
+        if (user.getState() == UserState.QUITTED) {
+            throw new ResourceNotFountException("탈퇴한 회원입니다");
+        }
+
         // null이면 수정하지 않기
         if (userUpdateRequest.getEmail() != null && !userUpdateRequest.getEmail().isBlank()) {
             user.setEmail(userUpdateRequest.getEmail());
@@ -104,12 +120,12 @@ public class UserService {
     // 유저 삭제
     public void deleteUser (int userId) {
         Optional<User> optionalUser = userRepository.findById(userId);
-        User user = optionalUser.get();
-
         if (optionalUser.isEmpty()) {
             throw new ResourceNotFountException("유저를 찾을 수 없습니다");
         }
+        User user = optionalUser.get();
 
-        userRepository.delete(user);
+        user.setState(UserState.QUITTED);
+        userRepository.save(user);
     }
 }

@@ -9,5 +9,6 @@ import java.util.Optional;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Integer> {
-    List<Comment> findByBoardId(int boardId);
+    List<Comment> findByUserIdAndIsDeletedFalse(int boardId);
+
 }

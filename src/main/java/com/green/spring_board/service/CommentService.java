@@ -53,10 +53,10 @@ public class CommentService {
 
     public List<CommentResponse> readComments(int boardId) {
         if (!boardRepository.existsById(boardId)) {
-            throw new ResourceNotFountException("게시글을 찾을 수 없습니다");
+            throw new ResourceNotFountException("댓글을 찾을 수 없습니다");
         }
         // 게시글을 기반ㅇ로 댓글을 조회
-        List<Comment> comments = commentRepository.findByBoardId(boardId);
+        List<Comment> comments = commentRepository.findByUserIdAndIsDeletedFalse(boardId);
 
         List<CommentResponse> commentResponses = new ArrayList<>();
         for (Comment comment : comments) {
@@ -79,6 +79,10 @@ public class CommentService {
             throw new ResourceNotFountException("댓글이 존재하지 않습니다");
         }
         Comment comment = optionalComment.get();
+
+        if (comment.isDeleted()) {
+            throw new ResourceNotFountException("삭제된 댓글입니다");
+        }
 
         // 작성자가 권한이 있는지 확인
         if (comment.getUser().getId() != userId) {
@@ -106,6 +110,7 @@ public class CommentService {
         if (comment.getUser().getId() != userId) {
             throw new AuthorizationFailureException("해당 작업 권한이 없습니다");
         }
-        commentRepository.delete(comment);
+        comment.setDeleted(true);
+        commentRepository.save(comment);
     }
 }

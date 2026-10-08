@@ -36,4 +36,7 @@ public class Comment {
 
     @Column(nullable = false, insertable = false)
     private LocalDateTime updatedDatetime;
+
+    @Column(nullable = false)
+    private boolean isDeleted;
 }

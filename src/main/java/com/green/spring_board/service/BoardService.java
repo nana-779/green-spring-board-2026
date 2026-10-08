@@ -41,7 +41,7 @@ public class BoardService {
         }
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Board> boards = boardRepository.findAll(pageable);
+        Page<Board> boards = boardRepository.findByIsDeletedFalse(pageable);
 
         List<BoardResponse> boardResponse = new ArrayList<>();
 
@@ -77,6 +77,10 @@ public class BoardService {
         }
         // 게시글 꺼냄
         Board board = optionalBoard.get();
+
+        if (board.isDeleted()) {
+            throw new ResourceNotFountException("삭제된 게시글입니다");
+        }
         // 조회수 +1
         board.setHits(board.getHits() + 1);
         // 조회수 +1된 게시글 저장
@@ -98,7 +102,7 @@ public class BoardService {
 
     // 내 게시글 조회
     public List<BoardResponse> getMyBoard (int userId) {
-        List<Board> boards = boardRepository.findByUserId(userId);
+        List<Board> boards = boardRepository.findByUserIdAndIsDeletedFalse(userId);
         List<BoardResponse> myBoardResponse = new ArrayList<>();
 
         // 게시글이 없으면 없다고 알리기
@@ -154,6 +158,10 @@ public class BoardService {
         // 위에거 다 거쳤으면 게시글을 꺼냄
         Board board = optionalBoard.get();
 
+        if (board.isDeleted()) {
+            throw new ResourceNotFountException("삭제된 게시글입니다");
+        }
+
         // 이 경우엔 보드에 접근해서 작성자를 알아야해서 DB접근 후에 코드 추가
         // 요청자의 userId 확인
         if (board.getUser().getId() != userId) {
@@ -186,7 +194,9 @@ public class BoardService {
         if (board.getUser().getId() != userId) {
             throw new AuthorizationFailureException("해당 게시글의 작업 권한이 없습니다");
         }
-        boardRepository.deleteById(id);
+
+        board.setDeleted(true);
+        boardRepository.save(board);
     }
 
     public void pressLike (int id, int userId) {
