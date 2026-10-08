@@ -29,7 +29,8 @@ public class BoardController {
     public ResponseEntity<ApiResponse<Page<BoardResponse>>> getBoards(
             HttpServletRequest httpServletRequest,
             @RequestParam(defaultValue = "0") int page, // 지금 내가 몇번째 페이지 보고이슨지
-            @RequestParam(defaultValue = "10") int size) // 한 페이지에 몇개 볼건지
+            @RequestParam(defaultValue = "10") int size, // 한 페이지에 몇개 볼건지
+            @RequestParam(defaultValue = "latest") String order)
     {
         HttpSession session = httpServletRequest.getSession(false);
 
@@ -39,7 +40,7 @@ public class BoardController {
         }
 
         return ResponseEntity.ok( // = 원하는 응답을 직접 셋팅하는걸 도와줌
-                ApiResponse.ok(boardService.getAllBoard(userId, page, size))
+                ApiResponse.ok(boardService.getAllBoard(userId, page, size, order))
         );
     }
 
