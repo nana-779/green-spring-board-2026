@@ -3,6 +3,8 @@ package com.green.spring_board.controller;
 import com.green.spring_board.DTO.*;
 import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -11,7 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
+@Tag(name = "그린 커뮤니티 유저 API", description = "유저 관련 API모음")
 @RestController
 @RequestMapping("/api/user")
 @AllArgsConstructor
@@ -20,6 +22,7 @@ public class UserController {
     private final UserService userService;
 
     // 회원가입
+    @Operation(summary = "회원가입 API", description = "회원가입 시 사용")
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<Void>> signup(@Valid @RequestBody SignupRequest signupRequest) {
 
