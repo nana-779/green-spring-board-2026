@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +26,11 @@ public class BoardController {
 
     // 전체 조회
     @GetMapping
-    public ResponseEntity<ApiResponse<List<BoardResponse>>> getBoards(HttpServletRequest httpServletRequest){
+    public ResponseEntity<ApiResponse<Page<BoardResponse>>> getBoards(
+            HttpServletRequest httpServletRequest,
+            @RequestParam(defaultValue = "0") int page, // 지금 내가 몇번째 페이지 보고이슨지
+            @RequestParam(defaultValue = "10") int size) // 한 페이지에 몇개 볼건지
+    {
         HttpSession session = httpServletRequest.getSession(false);
 
         int userId = -1;
@@ -34,14 +39,16 @@ public class BoardController {
         }
 
         return ResponseEntity.ok( // = 원하는 응답을 직접 셋팅하는걸 도와줌
-                ApiResponse.ok(boardService.getAllBoard(userId))
+                ApiResponse.ok(boardService.getAllBoard(userId, page, size))
         );
     }
 
     // 상세 조회
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<BoardResponse>> getBoardDetail(@PathVariable int id,
-                                                                     HttpServletRequest httpServletRequest) {
+    public ResponseEntity<ApiResponse<BoardResponse>> getBoardDetail(
+            @PathVariable int id,
+            HttpServletRequest httpServletRequest)
+    {
         HttpSession session = httpServletRequest.getSession(false);
         int userId = -1;
         if (session != null && session.getAttribute("userId") != null) {
@@ -55,7 +62,9 @@ public class BoardController {
 
     // 내 게시글 조회
     @GetMapping("/my-boards")
-    public ResponseEntity<ApiResponse<List<BoardResponse>>> getMyBoard(HttpServletRequest httpServletRequest) {
+    public ResponseEntity<ApiResponse<List<BoardResponse>>> getMyBoard(
+            HttpServletRequest httpServletRequest)
+    {
         // 1. 세션 확인
         // 세션 가져오기
         HttpSession session = httpServletRequest.getSession(false);

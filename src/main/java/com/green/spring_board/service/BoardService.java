@@ -13,6 +13,10 @@ import com.green.spring_board.repository.BoardRepository;
 import com.green.spring_board.repository.LikeRepository;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -26,8 +30,10 @@ public class BoardService {
     private UserRepository userRepository;
     private LikeRepository likeRepository;
 
-    public List<BoardResponse> getAllBoard (int userId) {
-        List<Board> boards = boardRepository.findAll();
+    public Page<BoardResponse> getAllBoard (int userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Board> boards = boardRepository.findAll(pageable);
+
         List<BoardResponse> boardResponse = new ArrayList<>();
 
         for (Board board : boards) {
@@ -46,7 +52,7 @@ public class BoardService {
                     )
             );
         }
-        return boardResponse;
+        return new PageImpl<>(boardResponse, pageable, boards.getTotalElements());
     }
     // List<Board> -> List<BoardResponse> 로 변환
     // 1. 리스트 보드 리스폰스 형태의 빈 리스트 생성
@@ -99,7 +105,7 @@ public class BoardService {
                             board.getContent(),
                             board.getHits(),
                             board.getLikeCount(),
-                            (userId == -1) ? false : likeRepository.existsByUserIdAndBoardId(userId, board.getId()),
+                            likeRepository.existsByUserIdAndBoardId(userId, board.getId()),
                             board.getUser().getId(),
                             board.getUser().getNickname(),
                             board.getCreatedDatetime(),
