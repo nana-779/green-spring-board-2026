@@ -1,10 +1,7 @@
 package com.green.spring_board.controller;
 
 import com.green.spring_board.DTO.*;
-import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.service.BoardService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
