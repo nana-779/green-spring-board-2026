@@ -15,6 +15,7 @@ import com.green.spring_board.repository.LikeRepository;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,7 +29,11 @@ public class BoardService {
     private UserRepository userRepository;
     private LikeRepository likeRepository;
 
-    public Page<BoardResponse> getAllBoard (int userId, int page, int size, String order) {
+    public Page<BoardResponse> getAllBoard (int page, int size, String order) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        int userId = userRepository.findByUsername(username).getId();
+        // 유저아이디를 토큰에 추가해도됨(뭔말이지)
+
         Sort sort;
         if (order.equals("latest")) {
             sort = Sort.by(Sort.Direction.DESC, "createdDatetime");
@@ -69,7 +74,10 @@ public class BoardService {
     // 3. 1번에서 만든 리스트에 추가
 
 
-    public BoardResponse getBoard (int id, int userId){
+    public BoardResponse getBoard (int id){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        int userId = userRepository.findByUsername(username).getId();
+
         Optional<Board> optionalBoard = boardRepository.findById(id); // 안에 값이 있or없 박스를 받음
         if (optionalBoard.isEmpty()) {
             // 요청한 게시글 번호를 찾지 못한 경우
@@ -101,7 +109,10 @@ public class BoardService {
     }
 
     // 내 게시글 조회
-    public List<BoardResponse> getMyBoard (int userId) {
+    public List<BoardResponse> getMyBoard () {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        int userId = userRepository.findByUsername(username).getId();
+
         List<Board> boards = boardRepository.findByUserIdAndIsDeletedFalse(userId);
         List<BoardResponse> myBoardResponse = new ArrayList<>();
 
@@ -130,7 +141,9 @@ public class BoardService {
     }
 
 
-    public int createBoard(BoardCreateRequest boardCreateRequest, Integer userId) {
+    public int createBoard(BoardCreateRequest boardCreateRequest) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        int userId = userRepository.findByUsername(username).getId();
 
         //유저 객체 만들고 유효성 체크
         // TODO :: 이후 삭제/탈퇴 유저에 대한 검증도 필요
@@ -148,7 +161,10 @@ public class BoardService {
         return savedBoard.getId();
     }
 
-    public void updateBoard (int id, BoardUpdateRequest boardUpdateRequest, int userId) {
+    public void updateBoard (int id, BoardUpdateRequest boardUpdateRequest) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        int userId = userRepository.findByUsername(username).getId();
+
         // 작성자와 요청자가 다르다면 DB에 다녀올필요 X
         Optional<Board> optionalBoard = boardRepository.findById(id);
         if (optionalBoard.isEmpty()) {
@@ -179,7 +195,10 @@ public class BoardService {
         boardRepository.save(board);
     }
 
-    public void deleteBoard(int id, int userId) {
+    public void deleteBoard(int id) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        int userId = userRepository.findByUsername(username).getId();
+
         Optional<Board> optionalBoard = boardRepository.findById(id);
 
         if (optionalBoard.isEmpty()) {
@@ -199,7 +218,10 @@ public class BoardService {
         boardRepository.save(board);
     }
 
-    public void pressLike (int id, int userId) {
+    public void pressLike (int id) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        int userId = userRepository.findByUsername(username).getId();
+
         Optional<Board> optionalBoard = boardRepository.findById(id);
         if (optionalBoard.isEmpty()) {
             throw new ResourceNotFountException("존재하지 않는 게시글입니다");
@@ -235,6 +257,7 @@ public class BoardService {
     }
 
     public LikeDetailResponse getLikeDetail (int id) {
+
         // 이 게시글에 좋아요 누른 유저 정보들을 likes 테이블에서 싹 가져오기
         List<Like> likes = likeRepository.findByBoardId(id);
         // 그 유저들의 닉네임을 뽑아서 LikeDetailResponse에 넣기
