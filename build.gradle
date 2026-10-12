@@ -31,11 +31,14 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
-	implementation 'org.springframework.security:spring-security-crypto'
+	annotationProcessor 'org.projectlombok:lombok' // getter, setter 간편하게
+	implementation 'org.springframework.security:spring-security-crypto' // 비밀번호 해싱을 위한 프레임워크
+	implementation 'org.springframework.boot:spring-boot-starter-security' // JWT + refresh token 을 위한 프레임워크
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5' // 구현할수있는 class를 로드하는것
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5' // 구현할수있는 class를 로드하는것
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // 구현할수있는 class를 로드하는것
 
-	// Swagger
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1' // swagger 사용
 }
 
 tasks.named('test') {

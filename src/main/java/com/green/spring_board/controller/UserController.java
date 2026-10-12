@@ -32,18 +32,11 @@ public class UserController {
 
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Void>> login(@Valid @RequestBody LoginRequest loginRequest,
-                                      HttpServletRequest httpServletRequest) {
-
-        // DTO Valid
-
-        int userId = userService.login(loginRequest);
-        // 세션작업
-        HttpSession session = httpServletRequest.getSession();
-        httpServletRequest.changeSessionId();
-        session.setAttribute("userId", userId);
-
-        return ResponseEntity.ok(ApiResponse.ok());
+    public ResponseEntity<ApiResponse<LoginResponse>> login(
+            @Valid @RequestBody LoginRequest loginRequest)
+    {
+        LoginResponse result = userService.login(loginRequest);
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     // "내" 정보 조회 (이메일과 닉네임만, 비밀번호는 이미 해싱해버려서 반환 불가)

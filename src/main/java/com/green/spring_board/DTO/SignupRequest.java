@@ -16,6 +16,10 @@ import org.hibernate.annotations.SQLInsert;
 
 public class SignupRequest {
     @NotBlank
+    @Size(max = 30)
+    private String username;
+
+    @NotBlank
     @Email
     @Size(max = 100)
     private String email;

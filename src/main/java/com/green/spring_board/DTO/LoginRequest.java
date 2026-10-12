@@ -12,7 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class LoginRequest {
     @NotBlank // null 또는 blank 문자열 방지
-    private String email;
+    private String username;
 
     @NotBlank
     private String password;

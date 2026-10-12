@@ -1,9 +1,6 @@
 package com.green.spring_board.service;
 
-import com.green.spring_board.DTO.LoginRequest;
-import com.green.spring_board.DTO.MyInfoResponse;
-import com.green.spring_board.DTO.SignupRequest;
-import com.green.spring_board.DTO.UserUpdateRequest;
+import com.green.spring_board.DTO.*;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.AuthorizationFailureException;
 import com.green.spring_board.exceptions.ResourceConflictException;
@@ -11,7 +8,12 @@ import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.global.UserState;
 import com.green.spring_board.repository.UserRepository;
+import com.green.spring_board.security.JwtTokenProvider;
 import lombok.AllArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,9 +25,16 @@ import java.util.Optional;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
 
     // 회원가입
     public void signup (SignupRequest signupRequest) {
+
+        // username이 사용중인지 확인
+        if (userRepository.existsByUsername(signupRequest.getUsername())) {
+            throw new ResourceConflictException("유저네임이 이미 사용중입니다");
+        }
 
         // 이메일이 사용중인지 확인
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
@@ -37,6 +46,7 @@ public class UserService {
 
         // db save
         User user = new User();
+        user.setUsername(signupRequest.getUsername());
         user.setNickname(signupRequest.getNickname());
         user.setEmail(signupRequest.getEmail());
         user.setPassword(hashedPassword);
@@ -45,25 +55,31 @@ public class UserService {
     }
 
     // 로그인
-    public int login (LoginRequest loginRequest) {
+    public LoginResponse login (LoginRequest loginRequest) {
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                    loginRequest.getUsername(), loginRequest.getPassword()
+            ));
+        } catch (AuthenticationException e) {
+            throw new UnauthenticatedException("아이디 또는 비밀번호가 올바르지 않습니다");
+        }
+
         // 1. 이메일이 존재하는지 확인
-        Optional<User> optionalUser = userRepository.findByEmail(loginRequest.getEmail());
-        if (optionalUser.isEmpty()) {
+        User user = userRepository.findByUsername(loginRequest.getUsername());
+
+        if (user == null) {
             throw new ResourceNotFountException("유저를 찾을 수 없습니다");
         }
-        User user = optionalUser.get();
 
         if (user.getState() == UserState.QUITTED) {
             throw new ResourceNotFountException("탈퇴한 회원입니다");
         }
 
-        // 2. 비밀번호가 올바른지 확인
-        // matches = 사용자가 입력한 비밀번호를 알아서 해싱해서 내가 DB에 갖고있는 해싱된 비밀번호와 대조함
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new UnauthenticatedException("비밀번호가 틀립니다");
-        }
+        // 2. 액세스 토큰 발급
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername());
+
         // 3. 로그인 성공 처리
-        return user.getId();
+        return new LoginResponse(accessToken);
     }
 
     // 로그인 한 유저 정보 가져오기
