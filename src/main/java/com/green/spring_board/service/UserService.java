@@ -12,6 +12,7 @@ import com.green.spring_board.repository.RefreshTokenRepository;
 import com.green.spring_board.repository.UserRepository;
 import com.green.spring_board.security.JwtTokenProvider;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -105,6 +106,38 @@ public class UserService {
         refreshTokenRepository.save(refresh);
         // 3. 로그인 성공 처리
         return new LoginResponse(accessToken, refreshToken);
+    }
+
+    // 리프레시
+    public RefreshResponse refresh (@Valid RefreshRequest refreshRequest) {
+        String userRefreshToken = refreshRequest.getRefreshToken();
+
+        // 1. refresh token 위변조 검증
+        if (!jwtTokenProvider.validateRefreshToken(userRefreshToken)) {
+            // 검증 실패 예외처리
+            throw new UnauthenticatedException("만료되었거나 유효하지 않은 리프레시 토큰입니다");
+        }
+
+        // 2. 우리 DB에 있는 리프레시 토큰인지 검증 (유저아이디로 식별x 리프레시 토큰으로 o)
+        Optional<RefreshToken> optionalRefreshToken = refreshTokenRepository.findByToken(userRefreshToken);
+        if (optionalRefreshToken.isEmpty()) {
+            throw new UnauthenticatedException("존재하지 않는 리프레시 토큰");
+        }
+
+        // 3. 해당 리프레시 토큰이 만료되지 않았는지 검증
+        if (!optionalRefreshToken.get().getExpirationDatetime().isAfter(LocalDateTime.now())) {
+            throw new UnauthenticatedException("만료되지 않은 리프레시 토큰");
+        }
+
+        // 4. 토큰 내 유저네임의 유저 정보가 유효한지 검증 (null이 아닌지, ACTIVE 상태인지)
+        String username = jwtTokenProvider.getUsernameFromToken(userRefreshToken);
+        User user = userRepository.findByUsername(username);
+        if (user == null || user.getState() != UserState.ACTIVE) {
+            throw new UnauthenticatedException("인증할 수 없는 계정입니다");
+        }
+
+        String accessToken = jwtTokenProvider.generateAccessToken(username);
+        return new RefreshResponse(accessToken);
     }
 
     // 로그인 한 유저 정보 가져오기

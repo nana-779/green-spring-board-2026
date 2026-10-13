@@ -20,7 +20,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             throws IOException, ServletException
     {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("text.plain;charset=UTF-8");
+        response.setContentType("text/plain;charset=UTF-8");
         response.getWriter().write("로그인이 필요합니다");
     }
 }

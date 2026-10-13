@@ -69,10 +69,21 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
+    // 리프레시
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<RefreshResponse>> refresh (
+            @Valid @RequestBody RefreshRequest refreshRequest)
+    {
+        // 리프레시 토큰을 이용해 새로운 액세스 토큰을 재발급받는 API
+        RefreshResponse response = userService.refresh(refreshRequest);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
     // 회원 수정
     @PatchMapping("/update")
-    public ResponseEntity<ApiResponse<Void>> updateUserInfo (HttpServletRequest request,
-                                                @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
+    public ResponseEntity<ApiResponse<Void>> updateUserInfo (
+            HttpServletRequest request,
+            @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
         // 이메일, 닉네임 업데이트
 
         // 세션 확인
