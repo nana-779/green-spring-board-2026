@@ -274,4 +274,31 @@ public class BoardService {
         // LikeDetailResponse 반환
         return likeDetailResponse;
     }
+
+    @Transactional(readOnly = true)
+    public List<BoardResponse> search(String keyword) {
+        List<Board> boards = boardRepository.searchByTitle(keyword);
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
+        List<Integer> likedBoardIds = likeRepository.findLikedBoardIdsByUserId(user.getId());
+
+        List<BoardResponse> responses = new ArrayList<>();
+
+        for (Board board : boards) {
+            BoardResponse newboard = new BoardResponse(
+                            board.getId(),
+                            board.getTitle(),
+                            board.getContent(),
+                            board.getHits(),
+                            board.getLikeCount(),
+                            likedBoardIds.contains(board.getId()),
+                            board.getUser().getId(),
+                            board.getUser().getNickname(),
+                            board.getCreatedDatetime(),
+                            board.getUpdatedDatetime()
+            );
+            responses.add(newboard);
+        }
+        return responses;
+    }
 }

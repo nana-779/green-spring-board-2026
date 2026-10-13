@@ -4,6 +4,7 @@ import com.green.spring_board.DTO.*;
 import com.green.spring_board.service.BoardService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.hibernate.dialect.unique.CreateTableUniqueDelegate;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -101,6 +102,13 @@ public class BoardController {
     {
         // 이 게시글에 좋아요 누른 유저들의 유저명
         LikeDetailResponse response = boardService.getLikeDetail(id);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @GetMapping ("/search")
+    public ResponseEntity<ApiResponse<List<BoardResponse>>> searchPost (@RequestParam String keyword)
+    {
+        List<BoardResponse> response = boardService.search(keyword);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }
