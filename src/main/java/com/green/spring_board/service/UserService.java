@@ -1,14 +1,17 @@
 package com.green.spring_board.service;
 
 import com.green.spring_board.DTO.*;
+import com.green.spring_board.entity.RefreshToken;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.AuthorizationFailureException;
 import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.global.UserState;
+import com.green.spring_board.repository.RefreshTokenRepository;
 import com.green.spring_board.repository.UserRepository;
 import com.green.spring_board.security.JwtTokenProvider;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +21,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -27,6 +34,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     // 회원가입
     public void signup (SignupRequest signupRequest) {
@@ -75,11 +83,28 @@ public class UserService {
             throw new ResourceNotFountException("탈퇴한 회원입니다");
         }
 
-        // 2. 액세스 토큰 발급
+        // 2. 액세스, 리프레시 토큰 발급
         String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
 
+        // 해당 유저의 기존 리프레시 토큰 삭제
+        // refreshTokenRepository.deleteByUserId(user.getId()); // < 이거 사용하려면 @Transactional 어노테이션 써야함
+        List<RefreshToken> tokens = refreshTokenRepository.findByUserId(user.getId());
+        refreshTokenRepository.deleteAll(tokens);
+
+        // 해당 유저의 신규 리프레시 토큰 저장
+        Date expiration = jwtTokenProvider.getExpiration(refreshToken);
+        LocalDateTime expirationDateTime = expiration.toInstant().atZone(
+                ZoneId.systemDefault()
+        ).toLocalDateTime();
+
+        RefreshToken refresh = new RefreshToken();
+        refresh.setUser(user);
+        refresh.setToken(refreshToken);
+        refresh.setExpirationDatetime(expirationDateTime);
+        refreshTokenRepository.save(refresh);
         // 3. 로그인 성공 처리
-        return new LoginResponse(accessToken);
+        return new LoginResponse(accessToken, refreshToken);
     }
 
     // 로그인 한 유저 정보 가져오기
