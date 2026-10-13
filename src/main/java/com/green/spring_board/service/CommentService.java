@@ -13,6 +13,7 @@ import com.green.spring_board.repository.CommentRepository;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,7 @@ public class CommentService {
     private BoardRepository boardRepository;
     private UserRepository userRepository;
 
+    @Transactional
     public void createComments (int id,
                                 int userId,
                                 CommentCreateRequest commentCreateRequest){
@@ -51,6 +53,7 @@ public class CommentService {
         commentRepository.save(comment);
     }
 
+    @Transactional
     public List<CommentResponse> readComments(int boardId) {
         if (!boardRepository.existsById(boardId)) {
             throw new ResourceNotFountException("댓글을 찾을 수 없습니다");
@@ -72,6 +75,7 @@ public class CommentService {
         return commentResponses;
     }
 
+    @Transactional
     public void updateComment (int id, int userId, CommentUpdateRequest commentUpdateRequest) {
         // 댓글이 존재하지 않는 경우
         Optional<Comment> optionalComment = commentRepository.findById(id);
@@ -97,6 +101,7 @@ public class CommentService {
         commentRepository.save(comment);
     }
 
+    @Transactional
     public void deleteComment (int id, int userId) {
         Optional<Comment> optionalComment = commentRepository.findById(id);
         if (optionalComment.isEmpty()) {

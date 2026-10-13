@@ -2,11 +2,11 @@ package com.green.spring_board.scheduler;
 
 import com.green.spring_board.repository.AccessTokenBlacklistRepository;
 import com.green.spring_board.repository.RefreshTokenRepository;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -18,7 +18,7 @@ public class TokenCleanupScheduler {
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
     @Transactional
-    @Scheduled(cron = "0 0 3 * * *") // 초 분 시 일 월 요일
+    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Seoul") // 초 분 시 일 월 요일
     public void cleanTokens() {
         LocalDateTime now =LocalDateTime.now();
         log.warn("토큰 정리 스케줄러가 실행됩니다. 실행 시작 시간: {}", now);

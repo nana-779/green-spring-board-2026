@@ -4,7 +4,6 @@ import com.green.spring_board.DTO.*;
 import com.green.spring_board.entity.AccessTokenBlacklist;
 import com.green.spring_board.entity.RefreshToken;
 import com.green.spring_board.entity.User;
-import com.green.spring_board.exceptions.AuthorizationFailureException;
 import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
@@ -13,21 +12,17 @@ import com.green.spring_board.repository.AccessTokenBlacklistRepository;
 import com.green.spring_board.repository.RefreshTokenRepository;
 import com.green.spring_board.repository.UserRepository;
 import com.green.spring_board.security.JwtTokenProvider;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.cglib.core.Local;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Security;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -45,6 +40,7 @@ public class UserService {
     private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
     // 회원가입
+    @Transactional
     public void signup (SignupRequest signupRequest) {
 
         // username이 사용중인지 확인
@@ -71,6 +67,7 @@ public class UserService {
     }
 
     // 로그인
+    @Transactional
     public LoginResponse login (LoginRequest loginRequest) {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
@@ -139,6 +136,7 @@ public class UserService {
     }
 
     // 리프레시
+    @Transactional
     public RefreshResponse refresh (@Valid RefreshRequest refreshRequest) {
         String userRefreshToken = refreshRequest.getRefreshToken();
 
@@ -171,6 +169,7 @@ public class UserService {
     }
 
     // 로그인 한 유저 정보 가져오기
+    @Transactional
     public MyInfoResponse getUserInfo(int userId) {
         Optional<User> optionalUser = userRepository.findById(userId);
 
@@ -196,6 +195,7 @@ public class UserService {
     }
 
     // 유저 정보 수정
+    @Transactional
     public void updateUserInfo (int userId, UserUpdateRequest userUpdateRequest) {
         Optional<User> optionalUser = userRepository.findById(userId);
 
@@ -222,6 +222,7 @@ public class UserService {
     }
 
     // 유저 삭제
+    @Transactional
     public void deleteUser (int userId) {
         Optional<User> optionalUser = userRepository.findById(userId);
         if (optionalUser.isEmpty()) {
