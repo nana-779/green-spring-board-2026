@@ -58,14 +58,13 @@ public class UserController {
 
     // 로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @RequestHeader ("Authorization") String authorization)
+    {
+        // 액세스, 리프레시 토큰 무효화
+        String accessToken = authorization.substring(7);
+        userService.logout(accessToken);
 
-        if (session == null || session.getAttribute("userId") == null) {
-            throw new UnauthenticatedException("로그인이 필요합니다");
-        }
-        // 다음부터 못사용하게 일련번호를 만료처리해서 다음에 재사용못하게
-        session.invalidate();
         return ResponseEntity.ok(ApiResponse.ok());
     }
 

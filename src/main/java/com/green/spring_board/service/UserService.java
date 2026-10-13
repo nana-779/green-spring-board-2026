@@ -1,6 +1,7 @@
 package com.green.spring_board.service;
 
 import com.green.spring_board.DTO.*;
+import com.green.spring_board.entity.AccessTokenBlacklist;
 import com.green.spring_board.entity.RefreshToken;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.AuthorizationFailureException;
@@ -8,20 +9,25 @@ import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.global.UserState;
+import com.green.spring_board.repository.AccessTokenBlacklistRepository;
 import com.green.spring_board.repository.RefreshTokenRepository;
 import com.green.spring_board.repository.UserRepository;
 import com.green.spring_board.security.JwtTokenProvider;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.cglib.core.Local;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestHeader;
 
+import java.security.Security;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -36,6 +42,7 @@ public class UserService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
     // 회원가입
     public void signup (SignupRequest signupRequest) {
@@ -106,6 +113,29 @@ public class UserService {
         refreshTokenRepository.save(refresh);
         // 3. 로그인 성공 처리
         return new LoginResponse(accessToken, refreshToken);
+    }
+
+    // 로그아웃
+    @Transactional
+    public void logout (String accessToken) {
+        // 1. 해당 사용자의 리프레시 토큰 무효화 (DB에서 삭제)
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
+
+        refreshTokenRepository.deleteByUserId(user.getId()); // < transactional 사용함
+
+        // 해당 사용자의 access token 무효화
+        // - DB 내 블랙리스트 테이블에 해당 토큰을 추가한다
+        // - 만료 이후에는 블랙리스트 해제가 필요하므로 만료일도 같이 입력
+        Date expiration = jwtTokenProvider.getExpiration(accessToken);
+        LocalDateTime convertedDateTime = expiration.toInstant().atZone(
+                ZoneId.systemDefault()
+        ).toLocalDateTime();
+
+        AccessTokenBlacklist accessTokenBlacklist = new AccessTokenBlacklist();
+        accessTokenBlacklist.setToken(accessToken);
+        accessTokenBlacklist.setExpirationDatetime(convertedDateTime);
+        accessTokenBlacklistRepository.save(accessTokenBlacklist);
     }
 
     // 리프레시
