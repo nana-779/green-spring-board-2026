@@ -23,8 +23,6 @@ import org.springframework.web.bind.annotation.*;
 
 public class UserController {
     private final UserService userService;
-    private final TomcatServerProperties tomcatServerProperties;
-    private final UserRepository userRepository;
 
     // 회원가입
     @PostMapping("/signup")
