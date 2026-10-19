@@ -41,13 +41,10 @@ public class Board {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
-<<<<<<< HEAD
-=======
 
     @Column(nullable = false)
     private int likeCount;
 
     @Column(nullable = false)
     private boolean isDeleted;
->>>>>>> d4560bb4832b931969c30f79c89b4a5fc9a556af
 }
