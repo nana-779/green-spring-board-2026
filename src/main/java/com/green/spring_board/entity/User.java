@@ -1,5 +1,6 @@
 package com.green.spring_board.entity;
 
+import com.green.spring_board.global.UserState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +21,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
+
     @Column(nullable = false)
     private String nickname;
 
@@ -34,4 +38,8 @@ public class User {
 
     @Column(nullable = false, insertable = false, updatable = false)
     private LocalDateTime updatedDatetime;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private UserState state;
 }

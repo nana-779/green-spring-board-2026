@@ -1,5 +1,6 @@
 package com.green.spring_board.DTO;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,6 +11,9 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LoginRequest {
-    private String email;
+    @NotBlank // null 또는 blank 문자열 방지
+    private String username;
+
+    @NotBlank
     private String password;
 }

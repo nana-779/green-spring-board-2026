@@ -13,4 +13,6 @@ public interface UserRepository extends JpaRepository <User, Integer>{
     // 이름만으로 기능을 예측해서 쿼리 생성
     boolean existsByEmail(String email);
     Optional<User> findByEmail(String email);
+    User findByUsername(String username);
+    boolean existsByUsername(String username);
 }

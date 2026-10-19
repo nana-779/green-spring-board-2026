@@ -1,19 +1,32 @@
 package com.green.spring_board.service;
 
-import com.green.spring_board.DTO.LoginRequest;
-import com.green.spring_board.DTO.MyInfoResponse;
-import com.green.spring_board.DTO.SignupRequest;
+import com.green.spring_board.DTO.*;
+import com.green.spring_board.entity.AccessTokenBlacklist;
+import com.green.spring_board.entity.RefreshToken;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFountException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
-import com.green.spring_board.exceptions.UserRequestException;
+import com.green.spring_board.global.UserState;
+import com.green.spring_board.repository.AccessTokenBlacklistRepository;
+import com.green.spring_board.repository.RefreshTokenRepository;
 import com.green.spring_board.repository.UserRepository;
+import com.green.spring_board.security.JwtTokenProvider;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -21,13 +34,20 @@ import java.util.Optional;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
 
     // 회원가입
+    @Transactional
     public void signup (SignupRequest signupRequest) {
-        // 유저네임, 비밀번호가 공백인지 아닌지 확인
-        if (signupRequest.getEmail().isBlank() || signupRequest.getPassword().isBlank()) {
-            throw new UserRequestException("이메일과 비밀번호는 공백일 수 없습니다");
+
+        // username이 사용중인지 확인
+        if (userRepository.existsByUsername(signupRequest.getUsername())) {
+            throw new ResourceConflictException("유저네임이 이미 사용중입니다");
         }
+
         // 이메일이 사용중인지 확인
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
             throw new ResourceConflictException("이메일이 이미 사용중입니다");
@@ -38,30 +58,118 @@ public class UserService {
 
         // db save
         User user = new User();
+        user.setUsername(signupRequest.getUsername());
         user.setNickname(signupRequest.getNickname());
         user.setEmail(signupRequest.getEmail());
         user.setPassword(hashedPassword);
+        user.setState(UserState.ACTIVE);
         userRepository.save(user);
     }
 
     // 로그인
-    public int login (LoginRequest loginRequest) {
+    @Transactional
+    public LoginResponse login (LoginRequest loginRequest) {
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                    loginRequest.getUsername(), loginRequest.getPassword()
+            ));
+        } catch (AuthenticationException e) {
+            throw new UnauthenticatedException("아이디 또는 비밀번호가 올바르지 않습니다");
+        }
+
         // 1. 이메일이 존재하는지 확인
-        Optional<User> optionalUser = userRepository.findByEmail(loginRequest.getEmail());
-        if (optionalUser.isEmpty()) {
+        User user = userRepository.findByUsername(loginRequest.getUsername());
+
+        if (user == null) {
             throw new ResourceNotFountException("유저를 찾을 수 없습니다");
         }
-        User user = optionalUser.get();
-        // 2. 비밀번호가 올바른지 확인
-        // matches = 사용자가 입력한 비밀번호를 알아서 해싱해서 내가 DB에 갖고있는 해싱된 비밀번호와 대조함
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new UnauthenticatedException("비밀번호가 틀립니다");
+
+        if (user.getState() == UserState.QUITTED) {
+            throw new ResourceNotFountException("탈퇴한 회원입니다");
         }
+
+        // 2. 액세스, 리프레시 토큰 발급
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
+
+        // 해당 유저의 기존 리프레시 토큰 삭제
+        // refreshTokenRepository.deleteByUserId(user.getId()); // < 이거 사용하려면 @Transactional 어노테이션 써야함
+        List<RefreshToken> tokens = refreshTokenRepository.findByUserId(user.getId());
+        refreshTokenRepository.deleteAll(tokens);
+
+        // 해당 유저의 신규 리프레시 토큰 저장
+        Date expiration = jwtTokenProvider.getExpiration(refreshToken);
+        LocalDateTime expirationDateTime = expiration.toInstant().atZone(
+                ZoneId.systemDefault()
+        ).toLocalDateTime();
+
+        RefreshToken refresh = new RefreshToken();
+        refresh.setUser(user);
+        refresh.setToken(refreshToken);
+        refresh.setExpirationDatetime(expirationDateTime);
+        refreshTokenRepository.save(refresh);
         // 3. 로그인 성공 처리
-        return user.getId();
+        return new LoginResponse(accessToken, refreshToken);
+    }
+
+    // 로그아웃
+    @Transactional
+    public void logout (String accessToken) {
+        // 1. 해당 사용자의 리프레시 토큰 무효화 (DB에서 삭제)
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
+
+        refreshTokenRepository.deleteByUserId(user.getId()); // < transactional 사용함
+
+        // 해당 사용자의 access token 무효화
+        // - DB 내 블랙리스트 테이블에 해당 토큰을 추가한다
+        // - 만료 이후에는 블랙리스트 해제가 필요하므로 만료일도 같이 입력
+        Date expiration = jwtTokenProvider.getExpiration(accessToken);
+        LocalDateTime convertedDateTime = expiration.toInstant().atZone(
+                ZoneId.systemDefault()
+        ).toLocalDateTime();
+
+        AccessTokenBlacklist accessTokenBlacklist = new AccessTokenBlacklist();
+        accessTokenBlacklist.setToken(accessToken);
+        accessTokenBlacklist.setExpirationDatetime(convertedDateTime);
+        accessTokenBlacklistRepository.save(accessTokenBlacklist);
+    }
+
+    // 리프레시
+    @Transactional
+    public RefreshResponse refresh (@Valid RefreshRequest refreshRequest) {
+        String userRefreshToken = refreshRequest.getRefreshToken();
+
+        // 1. refresh token 위변조 검증
+        if (!jwtTokenProvider.validateRefreshToken(userRefreshToken)) {
+            // 검증 실패 예외처리
+            throw new UnauthenticatedException("만료되었거나 유효하지 않은 리프레시 토큰입니다");
+        }
+
+        // 2. 우리 DB에 있는 리프레시 토큰인지 검증 (유저아이디로 식별x 리프레시 토큰으로 o)
+        Optional<RefreshToken> optionalRefreshToken = refreshTokenRepository.findByToken(userRefreshToken);
+        if (optionalRefreshToken.isEmpty()) {
+            throw new UnauthenticatedException("존재하지 않는 리프레시 토큰");
+        }
+
+        // 3. 해당 리프레시 토큰이 만료되지 않았는지 검증
+        if (!optionalRefreshToken.get().getExpirationDatetime().isAfter(LocalDateTime.now())) {
+            throw new UnauthenticatedException("만료되지 않은 리프레시 토큰");
+        }
+
+        // 4. 토큰 내 유저네임의 유저 정보가 유효한지 검증 (null이 아닌지, ACTIVE 상태인지)
+        String username = jwtTokenProvider.getUsernameFromToken(userRefreshToken);
+        User user = userRepository.findByUsername(username);
+        if (user == null || user.getState() != UserState.ACTIVE) {
+            throw new UnauthenticatedException("인증할 수 없는 계정입니다");
+        }
+
+        String accessToken = jwtTokenProvider.generateAccessToken(username);
+        return new RefreshResponse(accessToken);
     }
 
     // 로그인 한 유저 정보 가져오기
+    @Transactional
     public MyInfoResponse getUserInfo(int userId) {
         Optional<User> optionalUser = userRepository.findById(userId);
 
@@ -69,6 +177,11 @@ public class UserService {
             throw new ResourceNotFountException("유저를 찾을 수 없습니다");
         }
         User user = optionalUser.get();
+
+        if (user.getState() == UserState.QUITTED) {
+            throw new ResourceNotFountException("탈퇴한 회원입니다");
+        }
+
         // 3. 유저 아이디로 DB 조회
         // 4. DB에서 유저의 닉네임과 이메일 받아오기
         String email = user.getEmail();
@@ -82,7 +195,8 @@ public class UserService {
     }
 
     // 유저 정보 수정
-    public void updateUserInfo (int userId, MyInfoResponse myInfoResponse) {
+    @Transactional
+    public void updateUserInfo (int userId, UserUpdateRequest userUpdateRequest) {
         Optional<User> optionalUser = userRepository.findById(userId);
 
         if (optionalUser.isEmpty()) {
@@ -91,27 +205,32 @@ public class UserService {
 
         User user = optionalUser.get();
 
-        // null이면 수정하지 않기
-        if (myInfoResponse.getEmail() == null || myInfoResponse.getEmail().isBlank()) {
-            throw new UserRequestException("잘못된 입력값");
-        } user.setEmail(myInfoResponse.getEmail());
+        if (user.getState() == UserState.QUITTED) {
+            throw new ResourceNotFountException("탈퇴한 회원입니다");
+        }
 
-        if (myInfoResponse.getNickname() == null || myInfoResponse.getNickname().isBlank()) {
-            throw new UserRequestException("잘못된 입력값");
-        } user.setNickname(myInfoResponse.getNickname());
+        // null이면 수정하지 않기
+        if (userUpdateRequest.getEmail() != null && !userUpdateRequest.getEmail().isBlank()) {
+            user.setEmail(userUpdateRequest.getEmail());
+        }
+
+        if (userUpdateRequest.getNickname() != null && !userUpdateRequest.getNickname().isBlank()) {
+            user.setNickname(userUpdateRequest.getNickname());
+        }
 
         userRepository.save(user);
     }
 
     // 유저 삭제
+    @Transactional
     public void deleteUser (int userId) {
         Optional<User> optionalUser = userRepository.findById(userId);
-
         if (optionalUser.isEmpty()) {
             throw new ResourceNotFountException("유저를 찾을 수 없습니다");
         }
-
         User user = optionalUser.get();
-        userRepository.delete(user);
+
+        user.setState(UserState.QUITTED);
+        userRepository.save(user);
     }
 }
