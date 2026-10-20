@@ -71,7 +71,7 @@ public class BoardService {
         return new PageImpl<>(boardResponse, pageable, boards.getTotalElements());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public BoardResponse getBoard (int id){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         int userId = userRepository.findByUsername(username).getId();
@@ -107,7 +107,7 @@ public class BoardService {
     }
 
     // 내 게시글 조회
-    @Transactional(readOnly = true)
+    @Transactional
     public List<BoardResponse> getMyBoard () {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         int userId = userRepository.findByUsername(username).getId();

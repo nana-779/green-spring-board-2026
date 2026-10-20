@@ -12,6 +12,7 @@ import com.green.spring_board.repository.BoardRepository;
 import com.green.spring_board.repository.CommentRepository;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,8 +29,11 @@ public class CommentService {
 
     @Transactional
     public void createComments (int id,
-                                int userId,
                                 CommentCreateRequest commentCreateRequest){
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        int userId = userRepository.findByUsername(username).getId();
+
         //어떤 게시글에 다는지 확인(보드id가 있는지 확인하고 있으면 객체로 받기)
         Optional<Board> optionalBoard = boardRepository.findById(id);
         if (optionalBoard.isEmpty()) {
