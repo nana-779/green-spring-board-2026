@@ -59,7 +59,7 @@ public class CommentService {
             throw new ResourceNotFountException("댓글을 찾을 수 없습니다");
         }
         // 게시글을 기반ㅇ로 댓글을 조회
-        List<Comment> comments = commentRepository.findByUserIdAndIsDeletedFalse(boardId);
+        List<Comment> comments = commentRepository.findByBoardIdAndIsDeletedFalse(boardId);
 
         List<CommentResponse> commentResponses = new ArrayList<>();
         for (Comment comment : comments) {
